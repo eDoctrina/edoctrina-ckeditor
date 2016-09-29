@@ -787,6 +787,11 @@
 
 			var contents = editor.getSnapshot();
 
+		  // begin by edoc
+		  if(contents === '') contents = '<br>';
+		  // end by edoc
+
+
 			// In IE, we need to remove the expando attributes.
 			if ( CKEDITOR.env.ie && contents )
 				contents = contents.replace( /\s+data-cke-expando=".*?"/g, '' );
