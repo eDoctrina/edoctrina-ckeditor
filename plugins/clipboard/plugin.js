@@ -148,7 +148,7 @@
 
 			// Convert image file (if present) to base64 string for Firefox. Do it as the first
 			// step as the conversion is asynchronous and should hold all further paste processing.
-			if ( CKEDITOR.env.gecko ) {
+			// if ( CKEDITOR.env.gecko ) {
 				var supportedImageTypes = [ 'image/png', 'image/jpeg', 'image/gif' ],
 					latestId;
 
@@ -188,7 +188,7 @@
 						}
 					}
 				}, null, null, 1 );
-			}
+			// }
 
 			editor.on( 'paste', function( evt ) {
 				// Init `dataTransfer` if `paste` event was fired without it, so it will be always available.
@@ -1225,16 +1225,16 @@
 
 			eventData.dataTransfer.cacheData();
 
-			checkClipboardForImage(evt, function(found, data) {
+			// checkClipboardForImage(evt, function(found, data) {
 
 				var beforePasteNotCanceled = editor.fire( 'beforePaste', eventData ) !== false;
 
-				if (found) {
-					eventData.dataValue = data.replace( /<span[^>]+data-cke-bookmark[^<]*?<\/span>/ig, '' );
+			// 	if (found) {
+			// 		eventData.dataValue = data.replace( /<span[^>]+data-cke-bookmark[^<]*?<\/span>/ig, '' );
 
-					// Fire remaining events (without beforePaste)
-					beforePasteNotCanceled && firePasteEvents( editor, eventData );
-				} else {
+			// 		// Fire remaining events (without beforePaste)
+			// 		beforePasteNotCanceled && firePasteEvents( editor, eventData );
+			// 	} else {
 					// Fire 'beforePaste' event so clipboard flavor get customized by other plugins.
 					// If 'beforePaste' is canceled continue executing getClipboardDataByPastebin and then do nothing
 					// (do not fire 'paste', 'afterPaste' events). This way we can grab all - synthetically
@@ -1256,8 +1256,8 @@
 							beforePasteNotCanceled && firePasteEvents( editor, eventData );
 						} );
 					}
-				}
-			});
+			// 	}
+			// });
 
 		}
 
