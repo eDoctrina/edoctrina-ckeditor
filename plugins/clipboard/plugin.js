@@ -148,7 +148,7 @@
 
 			// Convert image file (if present) to base64 string for Firefox. Do it as the first
 			// step as the conversion is asynchronous and should hold all further paste processing.
-			// if ( CKEDITOR.env.gecko ) {
+			if ( CKEDITOR.env.gecko || CKEDITOR.env.chrome || CKEDITOR.env.safari ) {
 				var supportedImageTypes = [ 'image/png', 'image/jpeg', 'image/gif' ],
 					latestId;
 
@@ -188,7 +188,7 @@
 						}
 					}
 				}, null, null, 1 );
-			// }
+			}
 
 			editor.on( 'paste', function( evt ) {
 				// Init `dataTransfer` if `paste` event was fired without it, so it will be always available.
@@ -1175,90 +1175,38 @@
 			}
 		}
 
-		function checkClipboardForImage(evt, callback) {
-
-      if (evt.data && evt.data.$.clipboardData) {
-        var html =  evt.data.$.clipboardData.getData('text/html');
-        if (html && (html.length > 0)) {
-          // it seems we have HTML here
-        	callback(false);
-        } else {
-          var matchType = /image.*/;
-          var found = false;
-          var clipboardData = evt.data.$.clipboardData;
-          Array.prototype.forEach.call(clipboardData.types, function(type, i) {
-            var file, reader;
-            if (!found) {
-	            if (type.match(matchType) || clipboardData.items[i].type.match(matchType)) {
-	              found = true;
-		            evt.data.preventDefault();
-	              file = clipboardData.items[i].getAsFile();
-	              reader = new FileReader();
-	              reader.onload = function(evt) {
-	                callback(true, '<img src="' + evt.target.result + '" border="0" />');
-	              };
-	              reader.readAsDataURL(file);
-	              return;
-	            }
-	          }
-          });
-          if (!found) {
-		      	callback(false);
-            // evt.data.preventDefault();
-            // return;
-          }
-        }
-      } else {
-      	callback(false);
-      }
-
-		}
-
 		function pasteDataFromClipboard( evt ) {
-
 			// Default type is 'auto', but can be changed by beforePaste listeners.
 			var eventData = {
-				type: 'auto',
-				method: 'paste',
-				dataTransfer: clipboard.initPasteDataTransfer( evt )
-			};
+					type: 'auto',
+					method: 'paste',
+					dataTransfer: clipboard.initPasteDataTransfer( evt )
+				};
 
 			eventData.dataTransfer.cacheData();
 
-			// checkClipboardForImage(evt, function(found, data) {
+			// Fire 'beforePaste' event so clipboard flavor get customized by other plugins.
+			// If 'beforePaste' is canceled continue executing getClipboardDataByPastebin and then do nothing
+			// (do not fire 'paste', 'afterPaste' events). This way we can grab all - synthetically
+			// and natively pasted content and prevent its insertion into editor
+			// after canceling 'beforePaste' event.
+			var beforePasteNotCanceled = editor.fire( 'beforePaste', eventData ) !== false;
 
-				var beforePasteNotCanceled = editor.fire( 'beforePaste', eventData ) !== false;
+			// Do not use paste bin if the browser let us get HTML or files from dataTranfer.
+			if ( beforePasteNotCanceled && clipboard.canClipboardApiBeTrusted( eventData.dataTransfer, editor ) ) {
+				evt.data.preventDefault();
+				setTimeout( function() {
+					firePasteEvents( editor, eventData );
+				}, 0 );
+			} else {
+				getClipboardDataByPastebin( evt, function( data ) {
+					// Clean up.
+					eventData.dataValue = data.replace( /<span[^>]+data-cke-bookmark[^<]*?<\/span>/ig, '' );
 
-			// 	if (found) {
-			// 		eventData.dataValue = data.replace( /<span[^>]+data-cke-bookmark[^<]*?<\/span>/ig, '' );
-
-			// 		// Fire remaining events (without beforePaste)
-			// 		beforePasteNotCanceled && firePasteEvents( editor, eventData );
-			// 	} else {
-					// Fire 'beforePaste' event so clipboard flavor get customized by other plugins.
-					// If 'beforePaste' is canceled continue executing getClipboardDataByPastebin and then do nothing
-					// (do not fire 'paste', 'afterPaste' events). This way we can grab all - synthetically
-					// and natively pasted content and prevent its insertion into editor
-					// after canceling 'beforePaste' event.
-
-					// Do not use paste bin if the browser let us get HTML or files from dataTranfer.
-					if ( beforePasteNotCanceled && clipboard.canClipboardApiBeTrusted( eventData.dataTransfer, editor ) ) {
-						evt.data.preventDefault();
-						setTimeout( function() {
-							firePasteEvents( editor, eventData );
-						}, 0 );
-					} else {
-						getClipboardDataByPastebin( evt, function( data ) {
-							// Clean up.
-							eventData.dataValue = data.replace( /<span[^>]+data-cke-bookmark[^<]*?<\/span>/ig, '' );
-
-							// Fire remaining events (without beforePaste)
-							beforePasteNotCanceled && firePasteEvents( editor, eventData );
-						} );
-					}
-			// 	}
-			// });
-
+					// Fire remaining events (without beforePaste)
+					beforePasteNotCanceled && firePasteEvents( editor, eventData );
+				} );
+			}
 		}
 
 		function setToolbarStates() {
