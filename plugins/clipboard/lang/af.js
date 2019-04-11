@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'clipboard', 'af', {
@@ -10,6 +10,5 @@ CKEDITOR.plugins.setLang( 'clipboard', 'af', {
 	paste: 'Byvoeg',
 	pasteNotification: 'Druk %1 om by te voeg. You leser ondersteun nie die toolbar knoppie of inoud kieslysie opsie nie. ',
 	pasteArea: 'Area byvoeg',
-	pasteMsg: 'Voeg jou inhoud in die gebied onder by en druk OK',
-	title: 'Byvoeg'
+	pasteMsg: 'Voeg jou inhoud in die gebied onder by en druk OK'
 } );

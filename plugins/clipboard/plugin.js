@@ -1,5 +1,5 @@
 ﻿/**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -126,7 +126,7 @@
 		hidpi: true, // %REMOVE_LINE_CORE%
 		init: function( editor ) {
 			var filterType,
-				filtersFactory = filtersFactoryFactory();
+				filtersFactory = filtersFactoryFactory( editor );
 
 			if ( editor.config.forcePasteAsPlainText ) {
 				filterType = 'plain-text';
@@ -421,8 +421,7 @@
 	function initPasteClipboard( editor ) {
 		var clipboard = CKEDITOR.plugins.clipboard,
 			preventBeforePasteEvent = 0,
-			preventPasteEvent = 0,
-			inReadOnly = 0;
+			preventPasteEvent = 0;
 
 		addListeners();
 		addButtonsCommands();
@@ -552,15 +551,11 @@
 			editor.on( 'contentDom', addPasteListenersToEditable );
 
 			// For improved performance, we're checking the readOnly state on selectionChange instead of hooking a key event for that.
-			editor.on( 'selectionChange', function( evt ) {
-				inReadOnly = evt.data.selection.getRanges()[ 0 ].checkReadOnly();
-				setToolbarStates();
-			} );
+			editor.on( 'selectionChange', setToolbarStates );
 
 			// If the "contextmenu" plugin is loaded, register the listeners.
 			if ( editor.contextMenu ) {
-				editor.contextMenu.addListener( function( element, selection ) {
-					inReadOnly = selection.getRanges()[ 0 ].checkReadOnly();
+				editor.contextMenu.addListener( function() {
 					return {
 						cut: stateFromNamedCommand( 'cut' ),
 						copy: stateFromNamedCommand( 'copy' ),
@@ -738,9 +733,7 @@
 			// since editable won't fire the event if selection process started within
 			// iframe and ended out of the editor (https://dev.ckeditor.com/ticket/9851).
 			editable.attachListener( CKEDITOR.env.ie ? editable : editor.document.getDocumentElement(), 'mouseup', function() {
-				mouseupTimeout = setTimeout( function() {
-					setToolbarStates();
-				}, 0 );
+				mouseupTimeout = setTimeout( setToolbarStates, 0 );
 			} );
 
 			// Make sure that deferred mouseup callback isn't executed after editor instance
@@ -1222,11 +1215,18 @@
 		}
 
 		function stateFromNamedCommand( command ) {
-			if ( inReadOnly && command in { paste: 1, cut: 1 } )
-				return CKEDITOR.TRISTATE_DISABLED;
+			var selection = editor.getSelection(),
+				range = selection && selection.getRanges()[ 0 ],
+				// We need to correctly update toolbar states on readOnly (#2775).
+				inReadOnly = editor.readOnly || ( range && range.checkReadOnly() );
 
-			if ( command == 'paste' )
+			if ( inReadOnly && command in { paste: 1, cut: 1 } ) {
+				return CKEDITOR.TRISTATE_DISABLED;
+			}
+
+			if ( command == 'paste' ) {
 				return CKEDITOR.TRISTATE_OFF;
+			}
 
 			// Cut, copy - check if the selection is not empty.
 			var sel = editor.getSelection(),
@@ -1330,7 +1330,7 @@
 		return switchEnterMode( config, data );
 	}
 
-	function filtersFactoryFactory() {
+	function filtersFactoryFactory( editor ) {
 		var filters = {};
 
 		function setUpTags() {
@@ -1346,7 +1346,7 @@
 		}
 
 		function createSemanticContentFilter() {
-			var filter = new CKEDITOR.filter();
+			var filter = new CKEDITOR.filter( editor, {} );
 
 			filter.allow( {
 				$1: {
@@ -1374,12 +1374,12 @@
 					// so it tries to replace it with an element created based on the active enter mode, eventually doing nothing.
 					//
 					// Now you can sleep well.
-					return filters.plainText || ( filters.plainText = new CKEDITOR.filter( 'br' ) );
+					return filters.plainText || ( filters.plainText = new CKEDITOR.filter( editor, 'br' ) );
 				} else if ( type == 'semantic-content' ) {
 					return filters.semanticContent || ( filters.semanticContent = createSemanticContentFilter() );
 				} else if ( type ) {
 					// Create filter based on rules (string or object).
-					return new CKEDITOR.filter( type );
+					return new CKEDITOR.filter( editor, type );
 				}
 
 				return null;
@@ -1975,6 +1975,11 @@
 
 			// ...and paste content into the drop position.
 			dropRange = editor.createRange();
+			// Get actual selection with bookmarks if drop's bookmark are not in editable any longer.
+			// This might happen after extracting content from range (#2292).
+			if ( !dropBookmark.startNode.getCommonAncestor( editable ) ) {
+				dropBookmark = editor.getSelection().createBookmarks()[ 0 ];
+			}
 			dropRange.moveToBookmark( dropBookmark );
 
 			// We do not select drop range, because of may be in the place we can not set the selection
@@ -2695,17 +2700,16 @@
 		 */
 		_getImageFromClipboard: function() {
 			var file;
-
-			if ( this.$ && this.$.items && this.$.items[ 0 ] ) {
-				try {
+			try {
+				if ( this.$ && this.$.items && this.$.items[ 0 ] ) {
 					file = this.$.items[ 0 ].getAsFile();
 					// Duck typing
 					if ( file && file.type ) {
 						return file;
 					}
-				} catch ( err ) {
-					// noop
 				}
+			} catch ( err ) {
+			// noop
 			}
 
 			return undefined;

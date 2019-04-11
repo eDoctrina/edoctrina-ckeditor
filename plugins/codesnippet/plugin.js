@@ -1,5 +1,5 @@
 ﻿/**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -14,7 +14,7 @@
 
 	CKEDITOR.plugins.add( 'codesnippet', {
 		requires: 'widget,dialog',
-		lang: 'ar,az,bg,ca,cs,da,de,de-ch,el,en,en-au,en-gb,eo,es,es-mx,et,eu,fa,fi,fr,fr-ca,gl,he,hr,hu,id,it,ja,km,ko,ku,lt,lv,nb,nl,no,oc,pl,pt,pt-br,ro,ru,sk,sl,sq,sv,th,tr,tt,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
+		lang: 'ar,az,bg,ca,cs,da,de,de-ch,el,en,en-au,en-gb,eo,es,es-mx,et,eu,fa,fi,fr,fr-ca,gl,he,hr,hu,id,it,ja,km,ko,ku,lt,lv,nb,nl,no,oc,pl,pt,pt-br,ro,ru,sk,sl,sq,sr,sr-latn,sv,th,tr,tt,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
 		icons: 'codesnippet', // %REMOVE_LINE_CORE%
 		hidpi: true, // %REMOVE_LINE_CORE%
 
@@ -46,6 +46,11 @@
 				editor._.codesnippet.langsRegex = new RegExp( '(?:^|\\s)language-(' +
 					CKEDITOR.tools.objectKeys( langs ).join( '|' ) + ')(?:\\s|$)' );
 			};
+
+			editor.once( 'pluginsLoaded', function() {
+				// Remove the method once it cannot be used, because it leaks the editor reference (#589).
+				this.setHighlighter = null;
+			}, this );
 		},
 
 		onLoad: function() {
@@ -242,7 +247,7 @@
 		 *		}
 		 *
 		 * More information on how to change the list of languages is available
-		 * in the [Code Snippet documentation](#!/guide/dev_codesnippet-section-changing-languages-list).
+		 * in the {@glink guide/dev_codesnippet#changing-supported-languages Code Snippet documentation}.
 		 *
 		 * @property {Object} languages
 		 */
@@ -431,7 +436,7 @@
  * See {@link CKEDITOR.plugins.codesnippet.highlighter} to read more.
  *
  * Read more in the {@glink guide/dev_codesnippet documentation}
- * and see the [SDK sample](https://sdk.ckeditor.com/samples/codesnippet.html).
+ * and see the {@glink examples/codesnippet example}.
  *
  * @since 4.4
  * @cfg {String} [codeSnippet_codeClass='hljs']
@@ -447,7 +452,7 @@ CKEDITOR.config.codeSnippet_codeClass = 'hljs';
  * you may need to refer to external documentation to set `config.codeSnippet_languages` properly.
  *
  * Read more in the [documentation](#!/guide/dev_codesnippet-section-changing-supported-languages)
- * and see the [SDK sample](https://sdk.ckeditor.com/samples/codesnippet.html).
+ * and see the {@glink examples/codesnippet example}.
  *
  *		// Restricts languages to JavaScript and PHP.
  *		config.codeSnippet_languages = {
@@ -467,7 +472,7 @@ CKEDITOR.config.codeSnippet_codeClass = 'hljs';
  * ([highlight.js](http://highlightjs.org/static/test.html)).
  *
  * Read more in the [documentation](#!/guide/dev_codesnippet-section-changing-highlighter-theme)
- * and see the [SDK sample](https://sdk.ckeditor.com/samples/codesnippet.html).
+ * and see the {@glink examples/codesnippet example}.
  *
  *		// Changes the theme to "pojoaque".
  *		config.codeSnippet_theme = 'pojoaque';

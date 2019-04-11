@@ -1,7 +1,9 @@
 /**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
+
+/* global Q */
 
 ( function( bender ) {
 	'use strict';
@@ -92,7 +94,7 @@
 		},
 
 		env: {
-			/*
+			/**
 			 * Tells whether current environment is running on a mobile browser.
 			 *
 			 * It's different from deprecated {@link CKEDITOR.env.mobile} in a way that we are just
@@ -100,15 +102,20 @@
 			 */
 			mobile: CKEDITOR.env.iOS || navigator.userAgent.toLowerCase().indexOf( 'android' ) !== -1,
 
-			/*
+			/**
 			 * Whether current OS is a Linux environment.
 			 */
 			linux: navigator.userAgent.toLowerCase().indexOf( 'linux' ) !== -1,
 
-			/*
+			/**
 			 * Whether current environment is Opera browser.
 			 */
-			opera: navigator.userAgent.toLowerCase().indexOf( ' opr/' ) !== -1
+			opera: navigator.userAgent.toLowerCase().indexOf( ' opr/' ) !== -1,
+
+			/**
+			 * Whether current environment is run as build version of CKEditor.
+			 */
+			isBuild: CKEDITOR.revision !== '%REV%'
 		},
 
 		fixHtml: function( html, stripLineBreaks, toLowerCase ) {
@@ -1080,10 +1087,10 @@
 		/**
 		 * Multiplies inputTests for every editor.
 		 *
-		 * @param {Object} editorsNames editors definitions.
-		 * @param {Object} inputTests Tests to apply on every editor.
-		 * @param {Boolean} isolateTests If set to `true` each test is run on new editor instance.
-		 * @returns {Object} Created tests for every editor.
+		 * @param {String[]} editorsNames Editors definitions.
+		 * @param {Object.<String, Function>} inputTests Tests to apply on every editor.
+		 * @param {Boolean} [isolateTests=false] If set to `true` each test is run on new editor instance.
+		 * @returns {Object.<String, Function>} Created tests for every editor.
 		 */
 		createTestsForEditors: function( editorsNames, inputTests, isolateTests ) {
 			var outputTests = {},
@@ -1171,7 +1178,105 @@
 
 			// Add random string to be sure that the image will be downloaded, not taken from cache.
 			img.setAttribute( 'src', src + '?' + Math.random().toString( 16 ).substring( 2 ) );
+		},
+
+		/*
+		* Fires element event handler attribute e.g.
+		* ```html
+		* <button onkeydown="return customFn( event )">x</button>
+		* ```
+		*
+		* @param {CKEDITOR.dom.element/HTMLElement} element Element with attached event handler attribute.
+		* @param {String} eventName Event handler attribute name.
+		* @param {Object} evt Event payload.
+		*/
+		fireElementEventHandler: function( element, eventName, evt ) {
+			if ( element.$ ) {
+				element = element.$;
+			}
+
+			if ( CKEDITOR.env.ie && CKEDITOR.env.version < 9 ) {
+				var nativeEvent = CKEDITOR.document.$.createEventObject();
+
+				for ( var key in evt ) {
+					nativeEvent[ key ] = evt[ key ];
+				}
+
+				element.fireEvent( eventName, nativeEvent );
+			} else {
+				element[ eventName ]( evt );
+			}
+		},
+
+		/**
+		 * Creates a promise from the given function. It works in a similar way as a promise constructor
+		 * (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise),
+		 * with support for IE8 browser.
+		 *
+		 * ```js
+		 *	bender.tools.promise( function( resolve, reject ) {
+		 *		setTimeout( function() {
+		 *			var timestamp;
+		 *			try {
+		 *				timestamp = ( new Date() ).getTime();
+		 *			} catch ( e ) {
+		 *				reject( e );
+		 *			}
+		 *			resolve( timestamp );
+		 *		}, 5000 );
+		 *	} )
+		 * ```
+		 *
+		 * @param {Function} executor Initialization function executed immediately by the Promise implementation.
+		 * @param {Function} executor.resolve Function which should be called when promise is fulfilled.
+		 * @param {Function} executor.reject Function which should be called when promise is rejected.
+		 * @returns {Promise}
+		 */
+
+		promise: function( fn ) {
+			var deferred = Q.defer();
+
+			fn( CKEDITOR.tools.bind( deferred.resolve, deferred ), CKEDITOR.tools.bind( deferred.reject, deferred ) );
+
+			return deferred.promise;
+		},
+
+		/**
+		 * Creates test suite object for `bender.test` method from synchronous and asynchronous test cases.
+		 * Asynchronous test must be a function which returns a promise and cannot poses wait-resume statements.
+		 *
+		 * Please notice that currently this method doesn't support special test methods (`setUp`, `tearDown`, etc.),
+		 * which might be passed to the `bender.test` function.
+		 *
+		 * @param {Object} tests object
+		 */
+		createAsyncTests: function( tests ) {
+			var tmp = {};
+
+			for ( var testName in tests ) {
+				tmp[ testName ] = ( function( test ) {
+					return function() {
+						var promise = test.apply( this );
+
+						if ( Q.isPromise( promise ) ) {
+							promise.then( function() {
+									resume();
+								} )
+								.fail( function( err ) {
+									resume( function() {
+										throw err;
+									} );
+								} );
+
+							wait();
+						}
+					};
+				} )( tests[ testName ] );
+			}
+
+			return tmp;
 		}
+
 	};
 
 	bender.tools.range = {

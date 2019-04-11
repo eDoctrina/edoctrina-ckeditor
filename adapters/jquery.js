@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -283,7 +283,7 @@
 			} );
 
 			/**
-			 * The [jQuery Promise object]((http://api.jquery.com/promise/)) that handles the asynchronous constructor.
+			 * The [jQuery Promise object](http://api.jquery.com/promise/) that handles the asynchronous constructor.
 			 * This promise will be resolved after **all** of the constructors.
 			 *
 			 * @property {Function} promise

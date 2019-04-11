@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -2228,6 +2228,9 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 		editor.focusManager.remove( currentCover );
 		var win = CKEDITOR.document.getWindow();
 		currentCover.hide();
+
+		// Remove the current cover reference once the cover is removed (#589).
+		currentCover = null;
 		win.removeListener( 'resize', resizeCover );
 
 		if ( CKEDITOR.env.ie6Compat ) {

@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -239,6 +239,10 @@
 				this.attach();
 			}, this );
 		}
+
+		editor.on( 'destroy', function() {
+			this.destroy();
+		}, this );
 	}
 
 	Autocomplete.prototype = {
@@ -359,7 +363,7 @@
 
 			this._listeners = [];
 
-			this.view.element.remove();
+			this.view.element && this.view.element.remove();
 		},
 
 		/**

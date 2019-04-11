@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -886,6 +886,9 @@
 		 * element with the instance content.
 		 */
 		destroy: function( noUpdate ) {
+			var filters = CKEDITOR.filter.instances,
+				self = this;
+
 			this.fire( 'beforeDestroy' );
 
 			!noUpdate && updateEditorElement.call( this );
@@ -893,9 +896,16 @@
 			this.editable( null );
 
 			if ( this.filter ) {
-				this.filter.destroy();
 				delete this.filter;
 			}
+
+			// Destroy filters attached to the editor (#1722).
+			CKEDITOR.tools.array.forEach( CKEDITOR.tools.objectKeys( filters ), function( id ) {
+				var filter = filters[ id ];
+				if ( self === filter.editor ) {
+					filter.destroy();
+				}
+			} );
 
 			delete this.activeFilter;
 
@@ -1420,28 +1430,35 @@
 		 *
 		 * @since 4.6.0
 		 * @param {CKEDITOR.command/String} command The {@link CKEDITOR.command} instance or a string with the command name.
-		 * @returns {Number/null} The keystroke assigned to the provided command or `null` if there is no keystroke.
+		 * @param {Boolean} [all=false] If `true`, the function will return an array of assigned keystrokes.
+		 * Available since 4.11.0.
+		 * @returns {Number/Number[]/null} Depending on the `all` parameter value:
+		 *
+		 * * `false` &ndash; The first keystroke assigned to the provided command or `null` if there is no keystroke.
+		 * * `true` &ndash; An array of all assigned keystrokes or an empty array if there is no keystroke.
 		 */
-		getCommandKeystroke: function( command ) {
-			var commandInstance = ( typeof command === 'string' ? this.getCommand( command ) : command );
+		getCommandKeystroke: function( command, all ) {
+			var commandInstance = ( typeof command === 'string' ? this.getCommand( command ) : command ),
+				ret = [];
 
 			if ( commandInstance ) {
 				var commandName = CKEDITOR.tools.object.findKey( this.commands, commandInstance ),
-					keystrokes = this.keystrokeHandler.keystrokes,
-					key;
+					keystrokes = this.keystrokeHandler.keystrokes;
 
 				// Some commands have a fake keystroke - for example CUT/COPY/PASTE commands are handled natively.
+				// If fake key was used, the regular keystrokes should be skipped.
 				if ( commandInstance.fakeKeystroke ) {
-					return commandInstance.fakeKeystroke;
-				}
-
-				for ( key in keystrokes ) {
-					if ( keystrokes.hasOwnProperty( key ) && keystrokes[ key ] == commandName ) {
-						return key;
+					ret.push( commandInstance.fakeKeystroke );
+				} else {
+					for ( var i in keystrokes ) {
+						if ( keystrokes[ i ] === commandName ) {
+							ret.push( i );
+						}
 					}
 				}
 			}
-			return null;
+
+			return all ? ret : ( ret[ 0 ] || null );
 		},
 
 		/**
@@ -1614,7 +1631,7 @@ CKEDITOR.ELEMENT_MODE_INLINE = 3;
  * if the linked `<textarea>` element has the `disabled` attribute.
  *
  * Read more in the {@glink guide/dev_readonly documentation}
- * and see the [SDK sample](https://sdk.ckeditor.com/samples/readonly.html).
+ * and see the {@glink examples/readonly example}.
  *
  *		config.readOnly = true;
  *

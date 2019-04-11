@@ -1,5 +1,5 @@
 ﻿/**
- * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -60,6 +60,10 @@
 			'.cke_widget_wrapper:hover .cke_image_resizer,' +
 			'.cke_image_resizer.cke_image_resizing{' +
 				'display:block' +
+			'}' +
+			// Hide resizer in read only mode (#2816).
+			'.cke_editable[contenteditable="false"] .cke_image_resizer{' +
+				'display:none;' +
 			'}' +
 			// Expand widget wrapper when linked inline image.
 			'.cke_widget_wrapper>a{' +
@@ -434,8 +438,7 @@
 
 				// Setup dynamic image resizing with mouse.
 				// Don't initialize resizer when dimensions are disallowed (https://dev.ckeditor.com/ticket/11004).
-				// Don't initialize resizer when editor.readOnly is set to true (#719).
-				if ( editor.filter.checkFeature( this.features.dimension ) && editor.config.image2_disableResizer !== true && editor.readOnly != true ) {
+				if ( editor.filter.checkFeature( this.features.dimension ) && editor.config.image2_disableResizer !== true ) {
 					setupResizer( this );
 				}
 
@@ -942,7 +945,10 @@
 
 			// No center wrapper has been found.
 			else if ( name == 'figure' && el.hasClass( captionedClass ) ) {
-				image = el.getFirst( 'img' ) || el.getFirst( 'a' ).getFirst( 'img' );
+				image = el.find( function( child ) {
+					return child.name === 'img' &&
+						CKEDITOR.tools.array.indexOf( [ 'figure', 'a' ], child.parent.name ) !== -1;
+				}, true )[ 0 ];
 
 				// Upcast linked image like <a><img/></a>.
 			} else if ( isLinkedOrStandaloneImage( el ) ) {
@@ -1426,7 +1432,7 @@
 		if ( !editor.plugins.link )
 			return;
 
-		CKEDITOR.on( 'dialogDefinition', function( evt ) {
+		var listener = CKEDITOR.on( 'dialogDefinition', function( evt ) {
 			var dialog = evt.data;
 
 			if ( dialog.name == 'link' ) {
@@ -1477,8 +1483,12 @@
 				};
 			}
 		} );
+		// Listener has to be removed due to leaking the editor reference (#589).
+		editor.on( 'destroy', function() {
+			listener.removeListener();
+		} );
 
-		// Overwrite default behaviour of unlink command.
+		// Overwrite the default behavior of unlink command.
 		editor.getCommand( 'unlink' ).on( 'exec', function( evt ) {
 			var widget = getFocusedWidget( editor );
 
@@ -1611,7 +1621,7 @@
  * A CSS class applied to the `<figure>` element of a captioned image.
  *
  * Read more in the [documentation](#!/guide/dev_image2) and see the
- * [SDK sample](https://sdk.ckeditor.com/samples/image2.html).
+ * {@glink examples/image2 example}.
  *
  *		// Changes the class to "captionedImage".
  *		config.image2_captionedClass = 'captionedImage';
@@ -1626,7 +1636,7 @@ CKEDITOR.config.image2_captionedClass = 'image';
  * plugin dialog window.
  *
  * Read more in the [documentation](#!/guide/dev_image2) and see the
- * [SDK sample](https://sdk.ckeditor.com/samples/image2.html).
+ * {@glink examples/image2 example}.
  *
  *		config.image2_prefillDimensions = false;
  *
@@ -1639,7 +1649,7 @@ CKEDITOR.config.image2_captionedClass = 'image';
  * Disables the image resizer. By default the resizer is enabled.
  *
  * Read more in the [documentation](#!/guide/dev_image2) and see the
- * [SDK sample](https://sdk.ckeditor.com/samples/image2.html).
+ * {@glink examples/image2 example}.
  *
  *		config.image2_disableResizer = true;
  *
@@ -1699,7 +1709,7 @@ CKEDITOR.config.image2_captionedClass = 'image';
  *		}
  *
  * Read more in the [documentation](#!/guide/dev_image2) and see the
- * [SDK sample](https://sdk.ckeditor.com/samples/image2.html).
+ * {@glink examples/image2 example}.
  *
  * @since 4.4
  * @cfg {String[]} [image2_alignClasses=null]
@@ -1712,7 +1722,7 @@ CKEDITOR.config.image2_captionedClass = 'image';
  *		config.image2_altRequired = true;
  *
  * Read more in the [documentation](#!/guide/dev_image2) and see the
- * [SDK sample](https://sdk.ckeditor.com/samples/image2.html).
+ * {@glink examples/image2 example}.
  *
  * @since 4.6.0
  * @cfg {Boolean} [image2_altRequired=false]

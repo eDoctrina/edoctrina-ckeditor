@@ -27,18 +27,22 @@
 
 	var parentFrame = window.frameElement,
 		originalHeight = parentFrame && parentFrame.style.height;
-	function makeExpectedLeft( data ) {
-		if ( CKEDITOR.env.ie && CKEDITOR.env.version <= 9 ) {
-			return data.toFixed( 0 ) + '.00';
-		} else {
-			return data.toFixed( 2 );
-		}
-	}
 
 	var tests = {
 		setUp: function() {
 			if ( parentFrame ) {
 				parentFrame.style.height = '900px';
+			}
+
+			var doc = CKEDITOR.document.getDocumentElement(),
+				body = CKEDITOR.document.getBody();
+
+			if ( doc.$.scrollTop ) {
+				doc.$.scrollTop = 0;
+			}
+
+			if ( body.$.scrollTop ) {
+				body.$.scrollTop = 0;
 			}
 		},
 
@@ -48,11 +52,7 @@
 			}
 		},
 
-		'test divaera - out of view - bottom center': function( editor ) {
-			// Due to a high instability of this test, that fails on mobile devices, small screens
-			// and when devtools are open, it's disabled for 4.8.0 release (#1295).
-			assert.ignore();
-
+		'test panel - out of view - bottom center': function( editor ) {
 			if ( editor.name == 'divarea' ) {
 				// divarea tests are failing, it's an upstream issue from balloonpanel (#1064).
 				assert.ignore();
@@ -63,29 +63,38 @@
 					height: 200
 				} ),
 				markerElement = editor.editable().findOne( '#marker' ),
-				frame = editor.editable().isInline() ? editor.editable().getClientRect() : editor.window.getFrame().getClientRect(),
+				frame = getFrameRect( editor ),
 				elementFrame = markerElement.getClientRect(),
-				balloonToolbarRect;
+				// When window is so small editor is out of view panel might be rendered below editor.
+				// Mock view pane size to prevent that.
+				viewPaneSpy = sinon.stub( CKEDITOR.dom.window.prototype, 'getViewPaneSize' ).returns( { width: 1000, height: 1000 } ),
+				scrollTop,
+				balloonToolbarRect,
+				rectTop;
 
 			balloonToolbar.attach( markerElement );
 			balloonToolbarRect = balloonToolbar.parts.panel.getClientRect();
+			rectTop = CKEDITOR.env.ie && !CKEDITOR.env.edge ? Math.round( balloonToolbarRect.top ) : balloonToolbarRect.top;
+
+			viewPaneSpy.restore();
+
+			// When browser window is so small that panel doesn't fit, window will be scrolled into panel view.
+			// Use scroll position to adjust expected result.
+			scrollTop = CKEDITOR.document.getWindow().getScrollPosition().y;
 
 			var expectedLeft = makeExpectedLeft( frame.left + elementFrame.left + elementFrame.width / 2 - 50 );
 			assert.areEqual( expectedLeft, balloonToolbarRect.left.toFixed( 2 ), 'left align' );
 			// We have to add 1px because of border.
-			assert.areEqual( ( balloonToolbarRect.top + balloonToolbar.height + balloonToolbar.triangleHeight + 1 ).toFixed( 2 ),
-				( frame.top + frame.height ).toFixed( 2 ), 'top align' );
+			assert.areEqual( ( frame.top + frame.height - scrollTop ).toFixed( 2 ),
+				( rectTop + balloonToolbar.height + balloonToolbar.triangleHeight + 1 ).toFixed( 2 ), 'top align' );
 			balloonToolbar.destroy();
 			balloonToolbar = null;
 		},
 
-		'test divaera - out of view - hcenter top': function( editor ) {
-			// Due to a high instability of this test, that fails on mobile devices, small screens
-			// and when devtools are open, it's disabled for 4.8.0 release (#1295).
-			assert.ignore();
-
-			if ( editor.name == 'divarea' ) {
+		'test panel - out of view - hcenter top': function( editor ) {
+			if ( editor.name == 'divarea' || ( bender.config.isTravis && bender.tools.env.isBuild ) ) {
 				// divarea tests are failing, it's an upstream issue from balloonpanel (#1064).
+				// Ignore test with builded editor in travis.
 				assert.ignore();
 			}
 
@@ -94,26 +103,35 @@
 					height: 200
 				} ),
 				markerElement = editor.editable().findOne( '#marker' ),
-				frame = editor.editable().isInline() ? editor.editable().getClientRect() : editor.window.getFrame().getClientRect(),
+				frame = getFrameRect( editor ),
 				elementFrame = markerElement.getClientRect(),
-				balloonToolbarRect;
+				scrollTop,
+				balloonToolbarRect,
+				rectTop,
+				expectedLeft;
 
 			markerElement.getParent().getNext().scrollIntoView( true );
 			balloonToolbar.attach( markerElement );
 			balloonToolbarRect = balloonToolbar.parts.panel.getClientRect();
+			rectTop = CKEDITOR.env.ie && !CKEDITOR.env.edge ? Math.round( balloonToolbarRect.top ) : balloonToolbarRect.top;
 
-			var expectedLeft = makeExpectedLeft( frame.left + elementFrame.left + elementFrame.width / 2 - 50 );
+			// When browser window is so small that panel doesn't fit, window will be scrolled into panel view.
+			// We need to use scroll position to adjust expected result.
+			scrollTop = CKEDITOR.document.getWindow().getScrollPosition().y;
+
+			expectedLeft = makeExpectedLeft( frame.left + elementFrame.left + elementFrame.width / 2 - 50 );
+
 			assert.areEqual( expectedLeft, balloonToolbarRect.left.toFixed( 2 ), 'left align' );
-			assert.areEqual( frame.top.toFixed( 2 ), ( balloonToolbarRect.top - balloonToolbar.triangleHeight ).toFixed( 2 ), 'top align' );
+			assert.areEqual( ( frame.top - scrollTop ).toFixed( 2 ), ( rectTop - balloonToolbar.triangleHeight ).toFixed( 2 ), 'top align' );
 			balloonToolbar.destroy();
 			balloonToolbar = null;
 		},
 
 		'test panel adds cke_balloontoolbar class': function( editor ) {
 			var balloonToolbar = new CKEDITOR.ui.balloonToolbarView( editor, {
-				width: 100,
-				height: 200
-			} ),
+					width: 100,
+					height: 200
+				} ),
 				markerElement = editor.editable().findOne( '#marker' );
 			balloonToolbar.attach( markerElement );
 
@@ -166,4 +184,26 @@
 	tests = bender.tools.createTestsForEditors( CKEDITOR.tools.objectKeys( bender.editors ), tests );
 	ignoreUnsupportedEnvironment( tests );
 	bender.test( tests );
+
+
+	function makeExpectedLeft( data ) {
+		if ( CKEDITOR.env.ie && CKEDITOR.env.version <= 9 ) {
+			return data.toFixed( 0 ) + '.00';
+		} else {
+			return data.toFixed( 2 );
+		}
+	}
+
+	function getFrameRect( editor ) {
+		var frame = editor.window.getFrame();
+
+		if ( editor.editable().isInline() ) {
+			frame = editor.editable();
+		} else if ( CKEDITOR.env.safari ) {
+			// Use container because iframe has wrong rect values in mobile Safari (#1076).
+			frame = frame.getParent();
+		}
+
+		return frame.getClientRect();
+	}
 } )();
