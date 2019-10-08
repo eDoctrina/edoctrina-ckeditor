@@ -3,8 +3,6 @@
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
-/* global Q */
-
 ( function( bender ) {
 	'use strict';
 
@@ -62,6 +60,46 @@
 
 	bender.tools = {
 		/**
+		 * Ignores test case when the given plugin is not supported on the testing
+		 * environment. Uses {@link CKEDITOR.pluginDefinition#isSupportedEnvironment} to
+		 * verify if plugin is supported.
+		 *
+		 * Works for both manual and unit tests.
+		 *
+		 * @param pluginName pluginName Plugin name to check.
+		 * @param CKEDITOR.editor [editor] Editor instance passsed as an argument
+		 * to the {@link CKEDITOR.pluginDefinition#isSupportedEnvironment} method.
+		 */
+		ignoreUnsupportedEnvironment: function( pluginName, editor ) {
+			if ( editor ) {
+				if ( editor.status === 'ready' ) {
+					ignoreUnsupportedEnvironment();
+				} else {
+					editor.once( 'instanceReady', ignoreUnsupportedEnvironment );
+				}
+				return;
+			}
+
+			if ( CKEDITOR.plugins.registered[ pluginName ] ) {
+				ignoreUnsupportedEnvironment();
+			} else {
+				CKEDITOR.once( pluginName + 'PluginReady', ignoreUnsupportedEnvironment );
+			}
+
+			function ignoreUnsupportedEnvironment() {
+				var plugin = editor ? editor.plugins[ pluginName ] : CKEDITOR.plugins.registered[ pluginName ];
+
+				if ( !plugin.isSupportedEnvironment( editor ) ) {
+					if ( bender.testData.manual ) {
+						bender.ignore();
+					} else {
+						assert.ignore();
+					}
+				}
+			}
+		},
+
+		/**
 		 * Creates an array from an object.
 		 *
 		 * @param  {Object} obj
@@ -69,7 +107,7 @@
 		 */
 		objToArray: function( obj ) {
 			var tools = CKEDITOR.tools;
-			return tools.array.map( tools.objectKeys( obj ), function( key ) {
+			return tools.array.map( tools.object.keys( obj ), function( key ) {
 				return obj[ key ];
 			} );
 		},
@@ -1180,67 +1218,6 @@
 			img.setAttribute( 'src', src + '?' + Math.random().toString( 16 ).substring( 2 ) );
 		},
 
-		/*
-		* Fires element event handler attribute e.g.
-		* ```html
-		* <button onkeydown="return customFn( event )">x</button>
-		* ```
-		*
-		* @param {CKEDITOR.dom.element/HTMLElement} element Element with attached event handler attribute.
-		* @param {String} eventName Event handler attribute name.
-		* @param {Object} evt Event payload.
-		*/
-		fireElementEventHandler: function( element, eventName, evt ) {
-			if ( element.$ ) {
-				element = element.$;
-			}
-
-			if ( CKEDITOR.env.ie && CKEDITOR.env.version < 9 ) {
-				var nativeEvent = CKEDITOR.document.$.createEventObject();
-
-				for ( var key in evt ) {
-					nativeEvent[ key ] = evt[ key ];
-				}
-
-				element.fireEvent( eventName, nativeEvent );
-			} else {
-				element[ eventName ]( evt );
-			}
-		},
-
-		/**
-		 * Creates a promise from the given function. It works in a similar way as a promise constructor
-		 * (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise),
-		 * with support for IE8 browser.
-		 *
-		 * ```js
-		 *	bender.tools.promise( function( resolve, reject ) {
-		 *		setTimeout( function() {
-		 *			var timestamp;
-		 *			try {
-		 *				timestamp = ( new Date() ).getTime();
-		 *			} catch ( e ) {
-		 *				reject( e );
-		 *			}
-		 *			resolve( timestamp );
-		 *		}, 5000 );
-		 *	} )
-		 * ```
-		 *
-		 * @param {Function} executor Initialization function executed immediately by the Promise implementation.
-		 * @param {Function} executor.resolve Function which should be called when promise is fulfilled.
-		 * @param {Function} executor.reject Function which should be called when promise is rejected.
-		 * @returns {Promise}
-		 */
-
-		promise: function( fn ) {
-			var deferred = Q.defer();
-
-			fn( CKEDITOR.tools.bind( deferred.resolve, deferred ), CKEDITOR.tools.bind( deferred.reject, deferred ) );
-
-			return deferred.promise;
-		},
-
 		/**
 		 * Creates test suite object for `bender.test` method from synchronous and asynchronous test cases.
 		 * Asynchronous test must be a function which returns a promise and cannot poses wait-resume statements.
@@ -1258,11 +1235,11 @@
 					return function() {
 						var promise = test.apply( this );
 
-						if ( Q.isPromise( promise ) ) {
+						if ( promise ) {
 							promise.then( function() {
 									resume();
 								} )
-								.fail( function( err ) {
+								[ 'catch' ]( function( err ) {
 									resume( function() {
 										throw err;
 									} );
@@ -1275,8 +1252,33 @@
 			}
 
 			return tmp;
-		}
+		},
 
+		/**
+		 * Fires specified mouse event on the given element.
+		 *
+		 * @param {CKEDITOR.dom.element/HTMLElement} element Element with attached event handler attribute.
+		 * @param {String} eventName Event handler attribute name.
+		 * @param {Number} button Mouse button to be used.
+		*/
+		dispatchMouseEvent: function( element, type, button ) {
+			var mouseEvent;
+			button = CKEDITOR.tools.normalizeMouseButton( button, true );
+			element = element.$;
+
+			// Thanks to http://help.dottoro.com/ljhlvomw.php
+			if ( document.createEventObject ) {
+				mouseEvent = element.ownerDocument.createEventObject();
+
+				mouseEvent.button = button;
+				element.fireEvent( 'on' + type, mouseEvent );
+			} else {
+				mouseEvent = document.createEvent( 'MouseEvent' );
+
+				mouseEvent.initMouseEvent( type, true, true, window, 0, 0, 0, 80, 20, false, false, false, false, button, null );
+				element.dispatchEvent( mouseEvent );
+			}
+		}
 	};
 
 	bender.tools.range = {

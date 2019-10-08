@@ -113,7 +113,7 @@
 	};
 
 	bender.editorBot.createAsync = function( profile ) {
-		return bender.tools.promise( function( resolve, reject ) {
+		return new CKEDITOR.tools.promise( function( resolve, reject ) {
 			// By default this editor, should be surrounded with `promise`, so wait statements are generated inside that function,
 			// and shouldn't be call inside creation of new editor.
 			profile.ignoreEditorWaits = profile.ignoreEditorWaits === undefined ? true : profile.ignoreEditorWaits;
@@ -155,7 +155,7 @@
 
 			btnEl = CKEDITOR.document.getById( btn._.id );
 
-			bender.tools.fireElementEventHandler( btnEl, CKEDITOR.env.ie ? 'onmouseup' : 'onclick', { button: leftMouseButton } );
+			btnEl.fireEventHandler( CKEDITOR.env.ie ? 'mouseup' : 'click', { button: leftMouseButton } );
 
 			// combo panel opening is synchronous.
 			tc.wait();
@@ -227,6 +227,7 @@
 			var editor = this.editor,
 				combo = editor.ui.get( name ),
 				tc = this.testCase,
+				leftMouseButton = CKEDITOR.tools.normalizeMouseButton( CKEDITOR.MOUSE_BUTTON_LEFT, true ),
 				item;
 
 			editor.once( 'panelShow', function() {
@@ -242,7 +243,7 @@
 
 			item = CKEDITOR.document.getById( 'cke_' + combo.id );
 			item = item.getElementsByTag( 'a' ).getItem( 0 );
-			item.$[ CKEDITOR.env.ie ? 'onmouseup' : 'onclick' ]();
+			item.fireEventHandler( CKEDITOR.env.ie ? 'mouseup' : 'click', { button: leftMouseButton } );
 
 			// combo panel opening is synchronous.
 			tc.wait();

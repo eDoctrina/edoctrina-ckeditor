@@ -1,4 +1,4 @@
-/* bender-tags: editor */
+/* bender-tags: editor,dialog */
 /* bender-ckeditor-plugins: toolbar,button,entities,dialog,table */
 
 ( function() {
@@ -27,6 +27,10 @@
 				// Table width is set either to 100% or 500px depending on the editable size.
 				assert.areSame( isSmallViewport ? '100%' : '500px', dialog.getValueOf( 'info', 'txtWidth' ) );
 
+				// (#2423)
+				assert.isNull( dialog.getModel( bot.editor ) );
+				assert.areEqual( CKEDITOR.dialog.CREATION_MODE, dialog.getMode( bot.editor ) );
+
 				dialog.fire( 'ok' );
 				dialog.hide();
 
@@ -42,6 +46,37 @@
 
 					assert.areSame( expected, output );
 				}, 0 );
+			} );
+		},
+
+		// (#2423)
+		'test model for existing table': function() {
+			var editor = this.editors.editor,
+				bot = this.editorBots.editor;
+
+			bot.setData( '<table><tr><td>1</td></tr><tr><td>2</td></tr></table>', function() {
+				var table = editor.editable().findOne( 'table' );
+
+				editor.getSelection().selectElement( table );
+
+				bot.dialog( 'tableProperties', function( dialog ) {
+					assert.areEqual( table, dialog.getModel( editor ) );
+					assert.areEqual( CKEDITOR.dialog.EDITING_MODE, dialog.getMode( editor ) );
+
+					dialog.hide();
+				} );
+			} );
+		},
+
+		// (#2423)
+		'test model for table dialog': function() {
+			var bot = this.editorBots.editor;
+
+			bot.dialog( 'table', function( dialog ) {
+				assert.isNull( dialog.getModel( bot.editor ) );
+				assert.areEqual( CKEDITOR.dialog.CREATION_MODE, dialog.getMode( bot.editor ) );
+
+				dialog.hide();
 			} );
 		},
 
@@ -180,46 +215,6 @@
 
 				assert.isNull( dialog.parts.dialog.findOne( 'th' ) );
 				assert.isTrue( !!dialog.parts.dialog.findOne( 'td' ) );
-			} );
-		},
-
-		// (#1397)
-		'test table remove headers': function() {
-			var bot = this.editorBots.editor;
-
-			bot.setHtmlWithSelection(
-				'<table border="1" cellspacing="1" cellpadding="1" style="width:500px;">' +
-					'<thead>' +
-						'<tr>' +
-							'<th>^Foo</th>' +
-						'</tr>' +
-					'</thead>' +
-					'<tbody>' +
-						'<tr>' +
-							'<td>Bar</td>' +
-						'</tr>' +
-					'</tbody>' +
-				'</table>'
-			);
-
-			bot.dialog( 'tableProperties', function( dialog ) {
-				dialog.setValueOf( 'info', 'selHeaders', 'none' );
-
-				dialog.fire( 'ok' );
-				dialog.hide();
-
-				assert.beautified.html(
-					'<table border="1" cellspacing="1" cellpadding="1" style="width:500px">' +
-						'<tbody>' +
-							'<tr>' +
-								'<td>Foo</td>' +
-							'</tr>' +
-							'<tr>' +
-								'<td>Bar</td>' +
-							'</tr>' +
-						'</tbody>' +
-					'</table>',
-					dialog.getParentEditor().getData() );
 			} );
 		}
 	} );
