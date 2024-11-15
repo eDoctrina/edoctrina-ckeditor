@@ -1,10 +1,10 @@
 ﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /**
- * @fileOverview [Language](http://ckeditor.com/addon/language) plugin.
+ * @fileOverview The [Language](https://ckeditor.com/cke4/addon/language) plugin.
  */
 
 'use strict';
@@ -16,7 +16,7 @@
 
 	CKEDITOR.plugins.add( 'language', {
 		requires: 'menubutton',
-		lang: 'ar,ca,cs,cy,el,en,en-gb,es,fa,fi,fr,gl,hr,hu,ja,km,nb,nl,no,pl,pt,pt-br,ru,sl,sv,uk,zh,zh-cn', // %REMOVE_LINE_CORE%
+		lang: 'ar,az,bg,ca,cs,cy,da,de,de-ch,el,en,en-au,en-gb,eo,es,es-mx,et,eu,fa,fi,fo,fr,gl,he,hr,hu,id,it,ja,km,ko,ku,lt,lv,nb,nl,no,oc,pl,pt,pt-br,ro,ru,sk,sl,sq,sr,sr-latn,sv,tr,tt,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
 		icons: 'language', // %REMOVE_LINE_CORE%
 		hidpi: true, // %REMOVE_LINE_CORE%
 
@@ -39,9 +39,9 @@
 					var item = items[ 'language_' + languageId ];
 
 					if ( item )
-						editor[ item.style.checkActive( editor.elementPath() ) ? 'removeStyle' : 'applyStyle' ]( item.style );
+						editor[ item.style.checkActive( editor.elementPath(), editor ) ? 'removeStyle' : 'applyStyle' ]( item.style );
 				},
-				refresh: function( editor, path ) {
+				refresh: function( editor ) {
 					this.setState( plugin.getCurrentLangElement( editor ) ?
 						CKEDITOR.TRISTATE_ON : CKEDITOR.TRISTATE_OFF );
 				}
@@ -119,6 +119,13 @@
 					return activeItems;
 				}
 			} );
+
+			// Prevent of removing `span` element with `lang` and `dir` attribute (#779).
+			if ( editor.addRemoveFormatFilter ) {
+				editor.addRemoveFormatFilter( function( element ) {
+					return !( element.is( 'span' ) && element.getAttribute( 'dir' ) && element.getAttribute( 'lang' ) );
+				} );
+			}
 		},
 
 		// Gets the first language element for the current editor selection.
@@ -146,7 +153,7 @@
 
 /**
  * Specifies the list of languages available in the
- * [Language](http://ckeditor.com/addon/language) plugin. Each entry
+ * [Language](https://ckeditor.com/cke4/addon/language) plugin. Each entry
  * should be a string in the following format:
  *
  *		<languageCode>:<languageLabel>[:<textDirection>]
@@ -158,6 +165,8 @@
  * * _languageLabel_: The label to show for this language in the list.
  * * _textDirection_: (optional) One of the following values: `rtl` or `ltr`,
  * 	indicating the reading direction of the language. Defaults to `ltr`.
+ *
+ * See the {@glink examples/language example}.
  *
  *		config.language_list = [ 'he:Hebrew:rtl', 'pt:Portuguese', 'de:German' ];
  *

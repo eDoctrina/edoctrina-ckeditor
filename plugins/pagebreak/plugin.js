@@ -1,6 +1,6 @@
-/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+﻿/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /**
@@ -13,7 +13,9 @@
 	// Register a plugin named "pagebreak".
 	CKEDITOR.plugins.add( 'pagebreak', {
 		requires: 'fakeobjects',
-		lang: 'af,ar,bg,bn,bs,ca,cs,cy,da,de,el,en,en-au,en-ca,en-gb,eo,es,et,eu,fa,fi,fo,fr,fr-ca,gl,gu,he,hi,hr,hu,id,is,it,ja,ka,km,ko,ku,lt,lv,mk,mn,ms,nb,nl,no,pl,pt,pt-br,ro,ru,si,sk,sl,sq,sr,sr-latn,sv,th,tr,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
+		// jscs:disable maximumLineLength
+		lang: 'af,ar,az,bg,bn,bs,ca,cs,cy,da,de,de-ch,el,en,en-au,en-ca,en-gb,eo,es,es-mx,et,eu,fa,fi,fo,fr,fr-ca,gl,gu,he,hi,hr,hu,id,is,it,ja,ka,km,ko,ku,lt,lv,mk,mn,ms,nb,nl,no,oc,pl,pt,pt-br,ro,ru,si,sk,sl,sq,sr,sr-latn,sv,th,tr,tt,ug,uk,vi,zh,zh-cn', // %REMOVE_LINE_CORE%
+		// jscs:enable maximumLineLength
 		icons: 'pagebreak,pagebreak-rtl', // %REMOVE_LINE_CORE%
 		hidpi: true, // %REMOVE_LINE_CORE%
 		onLoad: function() {
@@ -24,7 +26,7 @@
 					'border-top:#999 1px dotted;' +
 					'border-bottom:#999 1px dotted;' +
 					'padding:0;' +
-					'height:5px;' +
+					'height:7px;' +
 					'cursor:default;'
 				).replace( /;/g, ' !important;' ); // Increase specificity to override other styles, e.g. block outline.
 
@@ -46,8 +48,8 @@
 				toolbar: 'insert,70'
 			} );
 
-			// Opera and webkit based browsers needs help to select the page-break.
-			( CKEDITOR.env.opera || CKEDITOR.env.webkit ) && editor.on( 'contentDom', function() {
+			// Webkit based browsers needs help to select the page-break.
+			CKEDITOR.env.webkit && editor.on( 'contentDom', function() {
 				editor.document.on( 'click', function( evt ) {
 					var target = evt.data.getTarget();
 					if ( target.is( 'div' ) && target.hasClass( 'cke_pagebreak' ) )
@@ -97,7 +99,7 @@
 							// The "internal form" of a pagebreak is pasted from clipboard.
 							// ACF may have distorted the HTML because "internal form" is
 							// different than "data form". Make sure that element remains valid
-							// by re-upcasting it (#11133).
+							// by re-upcasting it (https://dev.ckeditor.com/ticket/11133).
 							if ( element.attributes[ 'data-cke-pagebreak' ] )
 								upcastPageBreak( element );
 
@@ -119,12 +121,7 @@
 	// TODO Much probably there's no need to expose this object as public object.
 	CKEDITOR.plugins.pagebreakCmd = {
 		exec: function( editor ) {
-			// Create read-only element that represents a print break.
-			var pagebreak = editor.document.createElement( 'div', {
-				attributes: attributesSet( editor.lang.pagebreak.alt )
-			} );
-
-			editor.insertElement( pagebreak );
+			editor.insertElement( CKEDITOR.plugins.pagebreak.createElement( editor ) );
 		},
 		context: 'div',
 		allowedContent: {
@@ -134,12 +131,34 @@
 			span: {
 				match: function( element ) {
 					var parent = element.parent;
-					return parent && parent.name == 'div' && parent.styles[ 'page-break-after' ];
+					return parent && parent.name == 'div' && parent.styles && parent.styles[ 'page-break-after' ];
 				},
 				styles: 'display'
 			}
 		},
 		requiredContent: 'div{page-break-after}'
+	};
+
+	/**
+	 * The namespace containing a set of [Page Break](https://ckeditor.com/cke4/addon/pagebreak) plugin helpers.
+	 *
+	 * @since 4.12.0
+	 * @member CKEDITOR.plugins
+	 */
+	CKEDITOR.plugins.pagebreak = {
+		/**
+		 * Creates a read-only {@link CKEDITOR.dom.element} instance that represents a page break.
+		 *
+		 * @since 4.12.0
+		 * @member CKEDITOR.plugins.pagebreak
+		 * @param {CKEDITOR.editor} editor
+		 * @returns {CKEDITOR.dom.element} A page break element.
+		 */
+		createElement: function( editor ) {
+			return editor.document.createElement( 'div', {
+				attributes: attributesSet( editor.lang.pagebreak.alt )
+			} );
+		}
 	};
 
 	// Returns an object representing all the attributes

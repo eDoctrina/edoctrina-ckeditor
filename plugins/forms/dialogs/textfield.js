@@ -1,9 +1,8 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 CKEDITOR.dialog.add( 'textfield', function( editor ) {
-	var autoAttributes = { value: 1, size: 1, maxLength: 1 };
 
 	var acceptedTypes = { email: 1, password: 1, search: 1, tel: 1, text: 1, url: 1 };
 
@@ -23,19 +22,26 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 		title: editor.lang.forms.textfield.title,
 		minWidth: 350,
 		minHeight: 150,
-		onShow: function() {
-			delete this.textField;
+		getModel: function( editor ) {
+			var element = editor.getSelection().getSelectedElement();
 
-			var element = this.getParentEditor().getSelection().getSelectedElement();
-			if ( element && element.getName() == "input" && ( acceptedTypes[ element.getAttribute( 'type' ) ] || !element.getAttribute( 'type' ) ) ) {
-				this.textField = element;
+			if ( element && element.getName() == 'input' &&
+				( acceptedTypes[ element.getAttribute( 'type' ) ] || !element.getAttribute( 'type' ) ) ) {
+				return element;
+			}
+
+			return null;
+		},
+		onShow: function() {
+			var element = this.getModel( this.getParentEditor() );
+			if ( element ) {
 				this.setupContent( element );
 			}
 		},
 		onOk: function() {
 			var editor = this.getParentEditor(),
-				element = this.textField,
-				isInsertMode = !element;
+				element = this.getModel( editor ),
+				isInsertMode = this.getMode( editor ) == CKEDITOR.dialog.CREATION_MODE;
 
 			if ( isInsertMode ) {
 				element = editor.document.createElement( 'input' );
@@ -44,8 +50,9 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 
 			var data = { element: element };
 
-			if ( isInsertMode )
+			if ( isInsertMode ) {
 				editor.insertElement( data.element );
+			}
 
 			this.commitContent( data );
 
@@ -63,17 +70,14 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 				}
 			} );
 		},
-		contents: [
-			{
+		contents: [ {
 			id: 'info',
 			label: editor.lang.forms.textfield.title,
 			title: editor.lang.forms.textfield.title,
-			elements: [
-				{
+			elements: [ {
 				type: 'hbox',
 				widths: [ '50%', '50%' ],
-				children: [
-					{
+				children: [ {
 					id: '_cke_saved_name',
 					type: 'text',
 					label: editor.lang.forms.textfield.name,
@@ -93,7 +97,7 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 						}
 					}
 				},
-					{
+				{
 					id: 'value',
 					type: 'text',
 					label: editor.lang.forms.textfield.value,
@@ -106,17 +110,16 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 							element.copyAttributes( fresh, { value: 1 } );
 							fresh.replace( element );
 							data.element = fresh;
-						} else
+						} else {
 							autoCommit.call( this, data );
+						}
 					}
-				}
-				]
+				} ]
 			},
-				{
+			{
 				type: 'hbox',
 				widths: [ '50%', '50%' ],
-				children: [
-					{
+				children: [ {
 					id: 'size',
 					type: 'text',
 					label: editor.lang.forms.textfield.charWidth,
@@ -125,7 +128,7 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 					style: 'width:50px',
 					validate: CKEDITOR.dialog.validate.integer( editor.lang.common.validateNumberFailed )
 				},
-					{
+				{
 					id: 'maxLength',
 					type: 'text',
 					label: editor.lang.forms.textfield.maxChars,
@@ -133,15 +136,14 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 					accessKey: 'M',
 					style: 'width:50px',
 					validate: CKEDITOR.dialog.validate.integer( editor.lang.common.validateNumberFailed )
-				}
-				],
+				} ],
 				onLoad: function() {
-					// Repaint the style for IE7 (#6068)
+					// Repaint the style for IE7 (https://dev.ckeditor.com/ticket/6068)
 					if ( CKEDITOR.env.ie7Compat )
 						this.getElement().setStyle( 'zoom', '100%' );
 				}
 			},
-				{
+			{
 				id: 'type',
 				type: 'select',
 				label: editor.lang.forms.textfield.type,
@@ -154,7 +156,7 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 					[ editor.lang.forms.textfield.typeTel,		'tel' ],
 					[ editor.lang.forms.textfield.typeText,		'text' ],
 					[ editor.lang.forms.textfield.typeUrl,		'url' ]
-					],
+				],
 				setup: function( element ) {
 					this.setValue( element.getAttribute( 'type' ) );
 				},
@@ -171,12 +173,27 @@ CKEDITOR.dialog.add( 'textfield', function( editor ) {
 							replace.replace( element );
 							data.element = replace;
 						}
-					} else
+					} else {
 						element.setAttribute( 'type', this.getValue() );
+					}
 				}
-			}
-			]
-		}
-		]
+			},
+			{
+				id: 'required',
+				type: 'checkbox',
+				label: editor.lang.forms.textfield.required,
+				'default': '',
+				accessKey: 'Q',
+				value: 'required',
+				setup: CKEDITOR.plugins.forms._setupRequiredAttribute,
+				commit: function( data ) {
+					var element = data.element;
+					if ( this.getValue() )
+						element.setAttribute( 'required', 'required' );
+					else
+						element.removeAttribute( 'required' );
+				}
+			} ]
+		} ]
 	};
 } );

@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 'use strict';
@@ -219,8 +219,8 @@
 				var type = node.type;
 
 				return type == CKEDITOR.NODE_ELEMENT ? this.onElement( context, node ) :
-					type == CKEDITOR.NODE_TEXT ? new CKEDITOR.htmlParser.text( this.onText( context, node.value ) ) :
-					type == CKEDITOR.NODE_COMMENT ? new CKEDITOR.htmlParser.comment( this.onComment( context, node.value ) ) : null;
+					type == CKEDITOR.NODE_TEXT ? new CKEDITOR.htmlParser.text( this.onText( context, node.value, node ) ) :
+					type == CKEDITOR.NODE_COMMENT ? new CKEDITOR.htmlParser.comment( this.onComment( context, node.value, node ) ) : null;
 			},
 
 			onAttribute: function( context, element, name, value ) {
@@ -344,7 +344,7 @@
 
 					// Update currentValue and corresponding argument in args array.
 					// Updated values will be used in next for-loop step.
-					if ( ret != undefined )
+					if ( ret != null )
 						args[ 0 ] = currentValue = ret;
 
 					// ret == undefined will continue loop as nothing has happened.
@@ -400,8 +400,3 @@
 	}
 
 } )();
-
-/**
- * @class CKEDITOR.htmlParser.filterRulesDefinition
- * @abstract
- */

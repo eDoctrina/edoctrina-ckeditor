@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /**
@@ -12,9 +12,9 @@
  * Represents a DOM text node.
  *
  *		var nativeNode = document.createTextNode( 'Example' );
- *		var text = CKEDITOR.dom.text( nativeNode );
+ *		var text = new CKEDITOR.dom.text( nativeNode );
  *
- *		var text = CKEDITOR.dom.text( 'Example' );
+ *		var text = new CKEDITOR.dom.text( 'Example' );
  *
  * @class
  * @extends CKEDITOR.dom.node
@@ -77,6 +77,25 @@ CKEDITOR.tools.extend( CKEDITOR.dom.text.prototype, {
 	},
 
 	/**
+	 * Checks whether a node is empty or is a
+	 * {@link CKEDITOR.dom.selection#FILLING_CHAR_SEQUENCE FILLING_CHAR_SEQUENCE} string.
+	 *
+	 * @since 4.13.0
+	 * @param {Boolean} [ignoreWhiteSpace] Specifies whether the content that consists of only whitespace characters
+	 * should be treated as an empty one.
+	 * @returns {Boolean}
+	 */
+	isEmpty: function( ignoreWhiteSpace ) {
+		var text = this.getText();
+
+		if ( ignoreWhiteSpace ) {
+			text = CKEDITOR.tools.trim( text );
+		}
+
+		return !text || text === CKEDITOR.dom.selection.FILLING_CHAR_SEQUENCE;
+	},
+
+	/**
 	 * Breaks this text node into two nodes at the specified offset,
 	 * keeping both in the tree as siblings. This node then only contains
 	 * all the content up to the offset point. A new text node, which is
@@ -97,20 +116,16 @@ CKEDITOR.tools.extend( CKEDITOR.dom.text.prototype, {
 		var doc = this.getDocument();
 		var retval = new CKEDITOR.dom.text( this.$.splitText( offset ), doc );
 
-		if ( parent.childNodes.length == count )
-		{
+		if ( parent.childNodes.length == count ) {
 			// If the offset is after the last char, IE creates the text node
 			// on split, but don't include it into the DOM. So, we have to do
 			// that manually here.
-			if ( offset >= length )
-			{
+			if ( offset >= length ) {
 				retval = doc.createText( '' );
 				retval.insertAfter( this );
-			}
-			else
-			{
+			} else {
 				// IE BUG: IE8+ does not update the childNodes array in DOM after splitText(),
-				// we need to make some DOM changes to make it update. (#3436)
+				// we need to make some DOM changes to make it update. (https://dev.ckeditor.com/ticket/3436)
 				var workaround = doc.createText( '' );
 				workaround.insertAfter( retval );
 				workaround.remove();

@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 ( function() {
@@ -26,10 +26,10 @@
 		}
 	} );
 
-	var bbcodeMap = { b: 'strong', u: 'u', i: 'em', color: 'span', size: 'span', quote: 'blockquote', code: 'code', url: 'a', email: 'span', img: 'span', '*': 'li', list: 'ol' },
-		convertMap = { strong: 'b', b: 'b', u: 'u', em: 'i', i: 'i', code: 'code', li: '*' },
-		tagnameMap = { strong: 'b', em: 'i', u: 'u', li: '*', ul: 'list', ol: 'list', code: 'code', a: 'link', img: 'img', blockquote: 'quote' },
-		stylesMap = { color: 'color', size: 'font-size' },
+	var bbcodeMap = { b: 'strong', u: 'u', i: 'em', s: 's', color: 'span', size: 'span', left: 'div', right: 'div', center: 'div', justify: 'div', quote: 'blockquote', code: 'code', url: 'a', email: 'span', img: 'span', '*': 'li', list: 'ol' },
+		convertMap = { strong: 'b', b: 'b', u: 'u', em: 'i', i: 'i', s: 's', code: 'code', li: '*' },
+		tagnameMap = { strong: 'b', em: 'i', u: 'u', s: 's', li: '*', ul: 'list', ol: 'list', code: 'code', a: 'link', img: 'img', blockquote: 'quote' },
+		stylesMap = { color: 'color', size: 'font-size', left: 'text-align', center: 'text-align', right: 'text-align', justify: 'text-align' },
 		attributesMap = { url: 'href', email: 'mailhref', quote: 'cite', list: 'listType' };
 
 	// List of block-like tags.
@@ -50,7 +50,9 @@
 	}
 
 	// Maintain the map of smiley-to-description.
+	// jscs:disable maximumLineLength
 	var smileyMap = { smiley: ':)', sad: ':(', wink: ';)', laugh: ':D', cheeky: ':P', blush: ':*)', surprise: ':-o', indecision: ':|', angry: '>:(', angel: 'o:)', cool: '8-)', devil: '>:-)', crying: ';(', kiss: ':-*' },
+	// jscs:enable maximumLineLength
 		smileyReverseMap = {},
 		smileyRegExp = [];
 
@@ -68,9 +70,7 @@
 		var regex = [],
 			entities = {
 				nbsp: '\u00A0', // IE | FF
-				shy: '\u00AD', // IE
-				gt: '\u003E', // IE | FF |   --   | Opera
-				lt: '\u003C' // IE | FF | Safari | Opera
+				shy: '\u00AD' // IE
 			};
 
 		for ( var entity in entities )
@@ -113,7 +113,7 @@
 				// 4 : close of tag;
 
 				part = ( parts[ 1 ] || parts[ 3 ] || '' ).toLowerCase();
-				// Unrecognized tags should be delivered as a simple text (#7860).
+				// Unrecognized tags should be delivered as a simple text (https://dev.ckeditor.com/ticket/7860).
 				if ( part && !bbcodeMap[ part ] ) {
 					this.onText( parts[ 0 ] );
 					continue;
@@ -125,6 +125,11 @@
 						attribs = {},
 						styles = {},
 						optionPart = parts[ 2 ];
+
+					// Special handling of justify tags, these provide the alignment as a tag name (#2248).
+					if ( part == 'left' || part == 'right' || part == 'center' || part == 'justify' ) {
+						optionPart = part;
+					}
 
 					if ( optionPart ) {
 						if ( part == 'list' ) {
@@ -138,25 +143,33 @@
 
 						if ( stylesMap[ part ] ) {
 							// Font size represents percentage.
-							if ( part == 'size' )
+							if ( part == 'size' ) {
 								optionPart += '%';
+							}
 
 							styles[ stylesMap[ part ] ] = optionPart;
 							attribs.style = serializeStyleText( styles );
-						} else if ( attributesMap[ part ] )
-							attribs[ attributesMap[ part ] ] = optionPart;
+						} else if ( attributesMap[ part ] ) {
+							// All the input BBCode is encoded at the beginning so <> characters in the textual part
+							// are later correctly preserved in HTML. However... it affects parts that now become
+							// attributes, so we need to revert that. As a matter of fact, the content should not be
+							// encoded at the beginning, but only later when creating text nodes (encoding should be more precise)
+							// but it's too late not for such changes.
+							attribs[ attributesMap[ part ] ] = CKEDITOR.tools.htmlDecode( optionPart );
+						}
 					}
 
 					// Two special handling - image and email, protect them
 					// as "span" with an attribute marker.
 					if ( part == 'email' || part == 'img' )
-						attribs[ 'bbcode' ] = part;
+						attribs.bbcode = part;
 
 					this.onTagOpen( tagName, attribs, CKEDITOR.dtd.$empty[ tagName ] );
 				}
 				// Closing tag
-				else if ( parts[ 3 ] )
-					this.onTagClose( bbcodeMap[ part ] );
+				else if ( parts[ 3 ] ) {
+					this.onTagClose( bbcodeMap[part] );
+				}
 			}
 
 			if ( bbcode.length > lastIndex )
@@ -250,7 +263,7 @@
 			}
 		}
 
-		parser.onTagOpen = function( tagName, attributes, selfClosing ) {
+		parser.onTagOpen = function( tagName, attributes ) {
 			var element = new CKEDITOR.htmlParser.element( tagName, attributes );
 
 			// This is a tag to be removed if empty, so do not add it immediately.
@@ -464,7 +477,7 @@
 				return this._.rules[ tagName ] && this._.rules[ tagName ][ ruleName ];
 			},
 
-			openTag : function( tag ) {
+			openTag: function( tag ) {
 				if ( tag in bbcodeMap ) {
 					if ( this.getRule( tag, 'breakBeforeOpen' ) )
 						this.lineBreak( 1 );
@@ -473,7 +486,7 @@
 				}
 			},
 
-			openTagClose : function( tag ) {
+			openTagClose: function( tag ) {
 				if ( tag == 'br' )
 					this._.output.push( '\n' );
 				else if ( tag in bbcodeMap ) {
@@ -483,12 +496,8 @@
 				}
 			},
 
-			attribute : function( name, val ) {
+			attribute: function( name, val ) {
 				if ( name == 'option' ) {
-					// Force simply ampersand in attributes.
-					if ( typeof val == 'string' )
-						val = val.replace( /&amp;/g, '&' );
-
 					this.write( '=', val );
 				}
 			},
@@ -556,7 +565,7 @@
 
 			CKEDITOR.tools.extend( config, {
 				// This one is for backwards compatibility only as
-				// editor#enterMode is already set at this stage (#11202).
+				// editor#enterMode is already set at this stage (https://dev.ckeditor.com/ticket/11202).
 				enterMode: CKEDITOR.ENTER_BR,
 				basicEntities: false,
 				entities: false,
@@ -565,8 +574,8 @@
 
 			editor.filter.disable();
 
-			// Since CKEditor 4.3, editor#(active)enterMode is set before
-			// beforeInit. Properties got to be updated (#11202).
+			// Since CKEditor 4.3.0, editor#(active)enterMode is set before
+			// beforeInit. Properties got to be updated (https://dev.ckeditor.com/ticket/11202).
 			editor.activeEnterMode = editor.enterMode = CKEDITOR.ENTER_BR;
 		},
 
@@ -615,8 +624,9 @@
 						if ( element.attributes.listType ) {
 							if ( element.attributes.listType != 'decimal' )
 								element.attributes.style = 'list-style-type:' + element.attributes.listType;
-						} else
+						} else {
 							element.name = 'ul';
+						}
 
 						delete element.attributes.listType;
 					},
@@ -672,8 +682,9 @@
 										value = 'A';
 										break;
 								}
-							} else if ( tagName == 'ol' )
+							} else if ( tagName == 'ol' ) {
 								value = 1;
+							}
 
 							tagName = 'list';
 						} else if ( tagName == 'blockquote' ) {
@@ -724,6 +735,15 @@
 						return null;
 					},
 
+					div: function( element ) {
+						var alignment = CKEDITOR.tools.parseCssText( element.attributes.style, 1 )[ 'text-align' ] || '';
+
+						if ( alignment ) {
+							element.name = alignment;
+							return null;
+						}
+					},
+
 					// Remove any bogus br from the end of a pseudo block,
 					// e.g. <div>some text<br /><p>paragraph</p></div>
 					br: function( element ) {
@@ -770,6 +790,9 @@
 								name = 'size';
 							else if ( element.getStyle( 'color' ) )
 								name = 'color';
+						// Styled div could be align
+						} else if ( htmlName == 'div' && element.getStyle( 'text-align' ) ) {
+							name = element.getStyle( 'text-align' );
 						} else if ( name == 'img' ) {
 							var src = element.data( 'cke-saved-src' ) || element.getAttribute( 'src' );
 							if ( src && src.indexOf( editor.config.smiley_path ) === 0 )

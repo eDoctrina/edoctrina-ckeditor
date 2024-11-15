@@ -1,43 +1,45 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
+
 CKEDITOR.dialog.add( 'radio', function( editor ) {
 	return {
 		title: editor.lang.forms.checkboxAndRadio.radioTitle,
 		minWidth: 350,
 		minHeight: 140,
-		onShow: function() {
-			delete this.radioButton;
+		getModel: function( editor ) {
+			var element = editor.getSelection().getSelectedElement();
 
-			var element = this.getParentEditor().getSelection().getSelectedElement();
 			if ( element && element.getName() == 'input' && element.getAttribute( 'type' ) == 'radio' ) {
-				this.radioButton = element;
+				return element;
+			}
+
+			return null;
+		},
+		onShow: function() {
+			var element = this.getModel( this.getParentEditor() );
+			if ( element ) {
 				this.setupContent( element );
 			}
 		},
 		onOk: function() {
-			var editor,
-				element = this.radioButton,
-				isInsertMode = !element;
+			var editor = this.getParentEditor(),
+				element = this.getModel( editor );
 
-			if ( isInsertMode ) {
-				editor = this.getParentEditor();
+			if ( !element ) {
 				element = editor.document.createElement( 'input' );
 				element.setAttribute( 'type', 'radio' );
+				editor.insertElement( element );
 			}
 
-			if ( isInsertMode )
-				editor.insertElement( element );
 			this.commitContent( { element: element } );
 		},
-		contents: [
-			{
+		contents: [ {
 			id: 'info',
 			label: editor.lang.forms.checkboxAndRadio.radioTitle,
 			title: editor.lang.forms.checkboxAndRadio.radioTitle,
-			elements: [
-				{
+			elements: [ {
 				id: 'name',
 				type: 'text',
 				label: editor.lang.common.name,
@@ -57,7 +59,7 @@ CKEDITOR.dialog.add( 'radio', function( editor ) {
 					}
 				}
 			},
-				{
+			{
 				id: 'value',
 				type: 'text',
 				label: editor.lang.forms.checkboxAndRadio.value,
@@ -75,21 +77,27 @@ CKEDITOR.dialog.add( 'radio', function( editor ) {
 						element.removeAttribute( 'value' );
 				}
 			},
-				{
+			{
 				id: 'checked',
 				type: 'checkbox',
 				label: editor.lang.forms.checkboxAndRadio.selected,
 				'default': '',
 				accessKey: 'S',
-				value: "checked",
+				value: 'checked',
 				setup: function( element ) {
 					this.setValue( element.getAttribute( 'checked' ) );
 				},
 				commit: function( data ) {
 					var element = data.element;
 
-					if ( !( CKEDITOR.env.ie || CKEDITOR.env.opera ) ) {
-						if ( this.getValue() )
+					if ( !CKEDITOR.env.ie ) {
+						var value = this.getValue();
+						// Blink/Webkit needs to change checked property, not attribute. (https://dev.ckeditor.com/ticket/12465)
+						if ( CKEDITOR.env.webkit ) {
+							element.$.checked = value;
+						}
+
+						if ( value )
 							element.setAttribute( 'checked', 'checked' );
 						else
 							element.removeAttribute( 'checked' );
@@ -98,18 +106,38 @@ CKEDITOR.dialog.add( 'radio', function( editor ) {
 						var isChecked = !!this.getValue();
 
 						if ( isElementChecked != isChecked ) {
-							var replace = CKEDITOR.dom.element.createFromHtml( '<input type="radio"' + ( isChecked ? ' checked="checked"' : '' )
-								+ '></input>', editor.document );
+							var replace = CKEDITOR.dom.element.createFromHtml( '<input type="radio"' + ( isChecked ? ' checked="checked"' : '' ) +
+								'></input>', editor.document );
 							element.copyAttributes( replace, { type: 1, checked: 1 } );
 							replace.replace( element );
+
+							// Ugly hack which fix IE issues with radiobuttons (#834).
+							if ( isChecked ) {
+								replace.setAttribute( 'checked', 'checked' );
+							}
+
 							editor.getSelection().selectElement( replace );
 							data.element = replace;
 						}
 					}
 				}
-			}
-			]
-		}
-		]
+			},
+			{
+				id: 'required',
+				type: 'checkbox',
+				label: editor.lang.forms.checkboxAndRadio.required,
+				'default': '',
+				accessKey: 'Q',
+				value: 'required',
+				setup: CKEDITOR.plugins.forms._setupRequiredAttribute,
+				commit: function( data ) {
+					var element = data.element;
+					if ( this.getValue() )
+						element.setAttribute( 'required', 'required' );
+					else
+						element.removeAttribute( 'required' );
+				}
+			} ]
+		} ]
 	};
 } );

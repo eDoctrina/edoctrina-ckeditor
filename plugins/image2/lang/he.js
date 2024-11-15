@@ -1,19 +1,21 @@
-﻿/*
-Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+/*
+Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'image2', 'he', {
 	alt: 'טקסט חלופי',
 	btnUpload: 'שליחה לשרת',
-	captioned: 'Captioned image', // MISSING
+	captioned: 'כותרת תמונה',
+	captionPlaceholder: 'כותרת',
 	infoTab: 'מידע על התמונה',
 	lockRatio: 'נעילת היחס',
 	menu: 'תכונות התמונה',
-	pathName: 'image', // MISSING
-	pathNameCaption: 'caption', // MISSING
+	pathName: 'תמונה',
+	pathNameCaption: 'כותרת',
 	resetSize: 'איפוס הגודל',
-	resizer: 'Click and drag to resize', // MISSING
+	resizer: 'לחץ וגרור לשינוי הגודל',
 	title: 'מאפייני התמונה',
 	uploadTab: 'העלאה',
-	urlMissing: 'כתובת התמונה חסרה.'
+	urlMissing: 'כתובת התמונה חסרה.',
+	altMissing: 'Alternative text is missing.' // MISSING
 } );

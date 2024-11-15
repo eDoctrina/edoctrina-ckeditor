@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 ( function() {
@@ -38,12 +38,11 @@
 				title: lang.bulletedTitle,
 				minWidth: 300,
 				minHeight: 50,
-				contents: [
-					{
+				getModel: generateModelGetter( editor, 'ul' ),
+				contents: [ {
 					id: 'info',
 					accessKey: 'I',
-					elements: [
-						{
+					elements: [ {
 						type: 'select',
 						label: lang.type,
 						id: 'type',
@@ -54,7 +53,7 @@
 							[ lang.circle, 'circle' ],
 							[ lang.disc, 'disc' ],
 							[ lang.square, 'square' ]
-							],
+						],
 						setup: function( element ) {
 							var value = element.getStyle( 'list-style-type' ) || mapListStyle[ element.getAttribute( 'type' ) ] || element.getAttribute( 'type' ) || '';
 
@@ -67,10 +66,8 @@
 							else
 								element.removeStyle( 'list-style-type' );
 						}
-					}
-					]
-				}
-				],
+					} ]
+				} ],
 				onShow: function() {
 					var editor = this.getParentEditor(),
 						element = getListElement( editor, 'ul' );
@@ -93,31 +90,20 @@
 				[ lang.lowerAlpha, 'lower-alpha' ],
 				[ lang.upperAlpha, 'upper-alpha' ],
 				[ lang.decimal, 'decimal' ]
-				];
-
-			if ( !CKEDITOR.env.ie || CKEDITOR.env.version > 7 ) {
-				listStyleOptions.concat( [
-					[ lang.armenian, 'armenian' ],
-					[ lang.decimalLeadingZero, 'decimal-leading-zero' ],
-					[ lang.georgian, 'georgian' ],
-					[ lang.lowerGreek, 'lower-greek' ]
-					] );
-			}
+			];
 
 			return {
 				title: lang.numberedTitle,
 				minWidth: 300,
 				minHeight: 50,
-				contents: [
-					{
+				getModel: generateModelGetter( editor, 'ol' ),
+				contents: [ {
 					id: 'info',
 					accessKey: 'I',
-					elements: [
-						{
+					elements: [ {
 						type: 'hbox',
 						widths: [ '25%', '75%' ],
-						children: [
-							{
+						children: [ {
 							label: lang.start,
 							type: 'text',
 							id: 'start',
@@ -149,7 +135,7 @@
 								}
 							}
 						},
-							{
+						{
 							type: 'select',
 							label: lang.type,
 							id: 'type',
@@ -167,12 +153,9 @@
 								else
 									element.removeStyle( 'list-style-type' );
 							}
-						}
-						]
-					}
-					]
-				}
-				],
+						} ]
+					} ]
+				} ],
 				onShow: function() {
 					var editor = this.getParentEditor(),
 						element = getListElement( editor, 'ol' );
@@ -196,4 +179,10 @@
 	CKEDITOR.dialog.add( 'bulletedListStyle', function( editor ) {
 		return listStyle( editor, 'bulletedListStyle' );
 	} );
+
+	function generateModelGetter( editor, tagName ) {
+		return function() {
+			return getListElement( editor, tagName ) || null;
+		};
+	}
 } )();

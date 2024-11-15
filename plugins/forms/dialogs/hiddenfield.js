@@ -1,51 +1,58 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
+
 CKEDITOR.dialog.add( 'hiddenfield', function( editor ) {
 	return {
 		title: editor.lang.forms.hidden.title,
 		hiddenField: null,
 		minWidth: 350,
 		minHeight: 110,
-		onShow: function() {
-			delete this.hiddenField;
-
-			var editor = this.getParentEditor(),
-				selection = editor.getSelection(),
+		getModel: function( editor ) {
+			var selection = editor.getSelection(),
 				element = selection.getSelectedElement();
 
 			if ( element && element.data( 'cke-real-element-type' ) && element.data( 'cke-real-element-type' ) == 'hiddenfield' ) {
-				this.hiddenField = element;
-				element = editor.restoreRealElement( this.hiddenField );
-				this.setupContent( element );
-				selection.selectElement( this.hiddenField );
+				return element;
+			}
+
+			return null;
+		},
+		onShow: function() {
+			var editor = this.getParentEditor(),
+				element = this.getModel( editor );
+
+			if ( element ) {
+				this.setupContent( editor.restoreRealElement( element ) );
+				editor.getSelection().selectElement( element );
 			}
 		},
 		onOk: function() {
 			var name = this.getValueOf( 'info', '_cke_saved_name' ),
-				value = this.getValueOf( 'info', 'value' ),
 				editor = this.getParentEditor(),
-				element = CKEDITOR.env.ie && !( CKEDITOR.document.$.documentMode >= 8 ) ? editor.document.createElement( '<input name="' + CKEDITOR.tools.htmlEncode( name ) + '">' ) : editor.document.createElement( 'input' );
+				element = CKEDITOR.env.ie && CKEDITOR.document.$.documentMode < 8 ?
+					editor.document.createElement( '<input name="' + CKEDITOR.tools.htmlEncode( name ) + '">' ) :
+					editor.document.createElement( 'input' );
 
 			element.setAttribute( 'type', 'hidden' );
 			this.commitContent( element );
-			var fakeElement = editor.createFakeElement( element, 'cke_hidden', 'hiddenfield' );
-			if ( !this.hiddenField )
+			var fakeElement = editor.createFakeElement( element, 'cke_hidden', 'hiddenfield' ),
+				hiddenField = this.getModel( editor );
+
+			if ( !hiddenField )
 				editor.insertElement( fakeElement );
 			else {
-				fakeElement.replace( this.hiddenField );
+				fakeElement.replace( hiddenField );
 				editor.getSelection().selectElement( fakeElement );
 			}
 			return true;
 		},
-		contents: [
-			{
+		contents: [ {
 			id: 'info',
 			label: editor.lang.forms.hidden.title,
 			title: editor.lang.forms.hidden.title,
-			elements: [
-				{
+			elements: [ {
 				id: '_cke_saved_name',
 				type: 'text',
 				label: editor.lang.forms.hidden.name,
@@ -62,7 +69,7 @@ CKEDITOR.dialog.add( 'hiddenfield', function( editor ) {
 
 				}
 			},
-				{
+			{
 				id: 'value',
 				type: 'text',
 				label: editor.lang.forms.hidden.value,
@@ -77,9 +84,7 @@ CKEDITOR.dialog.add( 'hiddenfield', function( editor ) {
 					else
 						element.removeAttribute( 'value' );
 				}
-			}
-			]
-		}
-		]
+			} ]
+		} ]
 	};
 } );

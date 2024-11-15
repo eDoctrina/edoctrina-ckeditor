@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 ( function() {
@@ -42,6 +42,15 @@
 			title: iframeLang.title,
 			minWidth: 350,
 			minHeight: 260,
+			getModel: function( editor ) {
+				var element = editor.getSelection().getSelectedElement();
+
+				if ( element && element.data( 'cke-real-element-type' ) === 'iframe' ) {
+					return element;
+				}
+
+				return null;
+			},
 			onShow: function() {
 				// Clear previously saved elements.
 				this.fakeImage = this.iframeNode = null;
@@ -65,7 +74,7 @@
 
 				// A subset of the specified attributes/styles
 				// should also be applied on the fake element to
-				// have better visual effect. (#5240)
+				// have better visual effect. (https://dev.ckeditor.com/ticket/5240)
 				var extraStyles = {},
 					extraAttributes = {};
 				this.commitContent( iframeNode, extraStyles, extraAttributes );
@@ -77,20 +86,18 @@
 				if ( this.fakeImage ) {
 					newFakeImage.replace( this.fakeImage );
 					editor.getSelection().selectElement( newFakeImage );
-				} else
+				} else {
 					editor.insertElement( newFakeImage );
+				}
 			},
-			contents: [
-				{
+			contents: [ {
 				id: 'info',
 				label: commonLang.generalTab,
 				accessKey: 'I',
-				elements: [
-					{
+				elements: [ {
 					type: 'vbox',
 					padding: 0,
-					children: [
-						{
+					children: [ {
 						id: 'src',
 						type: 'text',
 						label: commonLang.url,
@@ -98,13 +105,11 @@
 						validate: CKEDITOR.dialog.validate.notEmpty( iframeLang.noUrl ),
 						setup: loadValue,
 						commit: commitValue
-					}
-					]
+					} ]
 				},
-					{
+				{
 					type: 'hbox',
-					children: [
-						{
+					children: [ {
 						id: 'width',
 						type: 'text',
 						requiredContent: 'iframe[width]',
@@ -115,7 +120,7 @@
 						setup: loadValue,
 						commit: commitValue
 					},
-						{
+					{
 						id: 'height',
 						type: 'text',
 						requiredContent: 'iframe[height]',
@@ -126,19 +131,19 @@
 						setup: loadValue,
 						commit: commitValue
 					},
-						{
+					{
 						id: 'align',
 						type: 'select',
 						requiredContent: 'iframe[align]',
 						'default': '',
 						items: [
 							[ commonLang.notSet, '' ],
-							[ commonLang.alignLeft, 'left' ],
-							[ commonLang.alignRight, 'right' ],
+							[ commonLang.left, 'left' ],
+							[ commonLang.right, 'right' ],
 							[ commonLang.alignTop, 'top' ],
 							[ commonLang.alignMiddle, 'middle' ],
 							[ commonLang.alignBottom, 'bottom' ]
-							],
+						],
 						style: 'width:100%',
 						labelLayout: 'vertical',
 						label: commonLang.align,
@@ -154,14 +159,12 @@
 							if ( this.getValue() )
 								extraAttributes.align = this.getValue();
 						}
-					}
-					]
+					} ]
 				},
-					{
+				{
 					type: 'hbox',
 					widths: [ '50%', '50%' ],
-					children: [
-						{
+					children: [ {
 						id: 'scrolling',
 						type: 'checkbox',
 						requiredContent: 'iframe[scrolling]',
@@ -169,21 +172,19 @@
 						setup: loadValue,
 						commit: commitValue
 					},
-						{
+					{
 						id: 'frameborder',
 						type: 'checkbox',
 						requiredContent: 'iframe[frameborder]',
 						label: iframeLang.border,
 						setup: loadValue,
 						commit: commitValue
-					}
-					]
+					} ]
 				},
-					{
+				{
 					type: 'hbox',
 					widths: [ '50%', '50%' ],
-					children: [
-						{
+					children: [ {
 						id: 'name',
 						type: 'text',
 						requiredContent: 'iframe[name]',
@@ -191,28 +192,25 @@
 						setup: loadValue,
 						commit: commitValue
 					},
-						{
+					{
 						id: 'title',
 						type: 'text',
 						requiredContent: 'iframe[title]',
 						label: commonLang.advisoryTitle,
 						setup: loadValue,
 						commit: commitValue
-					}
-					]
+					} ]
 				},
-					{
+				{
 					id: 'longdesc',
 					type: 'text',
 					requiredContent: 'iframe[longdesc]',
 					label: commonLang.longDescr,
 					setup: loadValue,
 					commit: commitValue
-				}
-				]
+				} ]
 			},
-				dialogadvtab && dialogadvtab.createAdvancedTab( editor, { id: 1, classes: 1, styles: 1 }, 'iframe' )
-				]
-		};
+			dialogadvtab && dialogadvtab.createAdvancedTab( editor, { id: 1, classes: 1, styles: 1 }, 'iframe' )
+		] };
 	} );
 } )();

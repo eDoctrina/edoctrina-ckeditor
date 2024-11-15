@@ -1,7 +1,8 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
+
 CKEDITOR.dialog.add( 'form', function( editor ) {
 	var autoAttributes = { action: 1, id: 1, method: 1, enctype: 1, target: 1 };
 
@@ -9,30 +10,26 @@ CKEDITOR.dialog.add( 'form', function( editor ) {
 		title: editor.lang.forms.form.title,
 		minWidth: 350,
 		minHeight: 200,
+		getModel: function( editor ) {
+			return editor.elementPath().contains( 'form', 1 ) || null;
+		},
 		onShow: function() {
-			delete this.form;
-
-			var path = this.getParentEditor().elementPath(),
-				form = path.contains( 'form', 1 );
+			var form = this.getModel( this.getParentEditor() );
 
 			if ( form ) {
-				this.form = form;
 				this.setupContent( form );
 			}
 		},
 		onOk: function() {
-			var editor,
-				element = this.form,
-				isInsertMode = !element;
+			var editor = this.getParentEditor(),
+				element = this.getModel( editor );
 
-			if ( isInsertMode ) {
-				editor = this.getParentEditor();
+			if ( !element ) {
 				element = editor.document.createElement( 'form' );
 				element.appendBogus();
+				editor.insertElement( element );
 			}
 
-			if ( isInsertMode )
-				editor.insertElement( element );
 			this.commitContent( element );
 		},
 		onLoad: function() {
@@ -54,14 +51,13 @@ CKEDITOR.dialog.add( 'form', function( editor ) {
 				}
 			} );
 		},
-		contents: [
-			{
+		contents: [ {
 			id: 'info',
 			label: editor.lang.forms.form.title,
 			title: editor.lang.forms.form.title,
-			elements: [
-				{
+			elements: [ {
 				id: 'txtName',
+				bidi: true,
 				type: 'text',
 				label: editor.lang.common.name,
 				'default': '',
@@ -78,25 +74,24 @@ CKEDITOR.dialog.add( 'form', function( editor ) {
 					}
 				}
 			},
-				{
+			{
 				id: 'action',
 				type: 'text',
 				label: editor.lang.forms.form.action,
 				'default': '',
 				accessKey: 'T'
 			},
-				{
+			{
 				type: 'hbox',
 				widths: [ '45%', '55%' ],
-				children: [
-					{
+				children: [ {
 					id: 'id',
 					type: 'text',
 					label: editor.lang.common.id,
 					'default': '',
 					accessKey: 'I'
 				},
-					{
+				{
 					id: 'enctype',
 					type: 'select',
 					label: editor.lang.forms.form.encoding,
@@ -108,15 +103,13 @@ CKEDITOR.dialog.add( 'form', function( editor ) {
 						[ 'text/plain' ],
 						[ 'multipart/form-data' ],
 						[ 'application/x-www-form-urlencoded' ]
-						]
-				}
-				]
+					]
+				} ]
 			},
-				{
+			{
 				type: 'hbox',
 				widths: [ '45%', '55%' ],
-				children: [
-					{
+				children: [ {
 					id: 'target',
 					type: 'select',
 					label: editor.lang.common.target,
@@ -129,9 +122,9 @@ CKEDITOR.dialog.add( 'form', function( editor ) {
 						[ editor.lang.common.targetTop, '_top' ],
 						[ editor.lang.common.targetSelf, '_self' ],
 						[ editor.lang.common.targetParent, '_parent' ]
-						]
+					]
 				},
-					{
+				{
 					id: 'method',
 					type: 'select',
 					label: editor.lang.forms.form.method,
@@ -140,12 +133,9 @@ CKEDITOR.dialog.add( 'form', function( editor ) {
 					items: [
 						[ 'GET', 'get' ],
 						[ 'POST', 'post' ]
-						]
-				}
-				]
-			}
-			]
-		}
-		]
+					]
+				} ]
+			} ]
+		} ]
 	};
 } );

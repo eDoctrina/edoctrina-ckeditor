@@ -1,6 +1,6 @@
-﻿/**
- * @license Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+/**
+ * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 ( function() {
@@ -93,7 +93,7 @@
 					text && node.append( parent.getDocument().createText( text ) );
 				}
 
-				return function( html, mode ) {
+				return function( html ) {
 					// document.write() or document.writeln() fail silently after
 					// the page load event in Adobe AIR.
 					// DOM manipulation could be used instead.
@@ -136,8 +136,9 @@
 							var attrs = CKEDITOR.htmlParser.fragment.fromHtml( startTag ).children[ 0 ].attributes;
 							attrs && doc.getBody().setAttributes( attrs );
 						} );
-					} else
+					} else {
 						original_write.apply( this, arguments );
+					}
 				};
 			} );
 
@@ -150,18 +151,19 @@
 					var panel = ui._.panel._.panel,
 						holder;
 
-					( function() {
+					( function waitForPanel() {
 						// Adding dom event listeners off-line are not supported in AIR,
 						// waiting for panel iframe loaded.
 						if ( !panel.isLoaded ) {
-							setTimeout( arguments.callee, 30 );
+							setTimeout( waitForPanel, 30 );
 							return;
 						}
 						holder = panel._.holder;
 						convertInlineHandlers( holder );
 					} )();
-				} else if ( ui instanceof CKEDITOR.dialog )
+				} else if ( ui instanceof CKEDITOR.dialog ) {
 					convertInlineHandlers( ui._.element );
+				}
 			} );
 		},
 		init: function( editor ) {

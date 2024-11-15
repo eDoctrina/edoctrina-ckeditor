@@ -1,11 +1,12 @@
-﻿/*
-Copyright (c) 2003-2014, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+/*
+Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'image2', 'sv', {
 	alt: 'Alternativ text',
 	btnUpload: 'Skicka till server',
 	captioned: 'Rubricerad bild',
+	captionPlaceholder: 'Bildtext',
 	infoTab: 'Bildinformation',
 	lockRatio: 'Lås höjd/bredd förhållanden',
 	menu: 'Bildegenskaper',
@@ -15,5 +16,6 @@ CKEDITOR.plugins.setLang( 'image2', 'sv', {
 	resizer: 'Klicka och drag för att ändra storlek',
 	title: 'Bildegenskaper',
 	uploadTab: 'Ladda upp',
-	urlMissing: 'Bildkällans URL saknas.'
+	urlMissing: 'Bildkällans URL saknas.',
+	altMissing: 'Alternativ text saknas'
 } );
