@@ -166,8 +166,22 @@
 
 							// Convert image file to img tag with base64 image.
 							fileReader.addEventListener( 'load', function() {
-								evt.data.dataValue = '<img src="' + fileReader.result + '" />';
-								editor.fire( 'paste', evt.data );
+								br.startProgress('Pasting image...');
+
+								var s3DocumentsDataSource = br.dataSource(br.baseUrl + 'api/S3Documents/');
+								s3DocumentsDataSource.on('error', function(operation, error) {
+									br.growlError(error);
+								});
+
+								s3DocumentsDataSource.invoke('uploadInlineImage', {
+									image: fileReader.result
+								}, function(result, response) {
+									if (result) {
+										evt.data.dataValue = '<img src="' + response.href + '" />';
+										editor.fire( 'paste', evt.data );
+										br.hideProgress();
+									}
+								});
 							}, false );
 
 							// Proceed with normal flow if reading file was aborted.
