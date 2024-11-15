@@ -176,10 +176,10 @@
                   br.hideProgress();
                   if (result) {
                     evt.data.dataValue = `<img src="${response.href}" />`;
-                    editor.fire('paste', evt.data);
                   } else {
                     evt.data.dataValue = `<img src="${fileReader.result}" />`;
                   }
+                  editor.fire('paste', evt.data);
                 });
               }, false);
 
