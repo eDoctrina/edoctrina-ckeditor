@@ -176,7 +176,7 @@
 									br.hideProgress();
 
 									if (result) {
-										evt.data.dataValue = '<img src="' + response.href + '" />';
+										evt.data.dataValue = '<img src="' + response.href + '" crossorigin="Anonymous" />';
 									} else {
 										evt.data.dataValue = '<img src="' + fileReader.result + '" />';
 									}
